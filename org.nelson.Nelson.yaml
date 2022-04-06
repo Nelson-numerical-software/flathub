@@ -1,0 +1,184 @@
+app-id: org.nelson.Nelson
+runtime: org.kde.Sdk
+runtime-version: '5.15'
+sdk: org.kde.Sdk
+command: /app/Nelson-0.6.3/bin/linux/nelson
+rename-appdata-file: nelson.appdata.xml
+finish-args:
+  - --socket=x11
+  - --share=ipc
+  - --device=dri
+  - --socket=pulseaudio
+  - --share=network
+  - --filesystem=home
+cleanup:
+  - /share/man
+  - "*.la"
+  - "*.a"
+
+modules:
+
+  - name: lapack
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_SHARED_LIBS=ON
+      - -DBUILD_TESTING=OFF
+      - -DLAPACKE=ON
+      - -DCBLAS=ON
+    sources:
+      - type: archive
+        url: https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
+        sha256: 328c1bea493a32cac5257d84157dc686cc3ab0b004e2bea22044e0a59f6f8a19
+        x-checker-data:
+          type: anitya
+          project-id: 1534
+          stable-only: true
+          url-template: https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v$version.tar.gz
+
+  - name: fftw3
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -Wno-dev # suppress warning for project developers
+      - -DENABLE_THREADS=ON
+    sources:
+      - type: archive
+        url: http://www.fftw.org/fftw-3.3.10.tar.gz
+        sha256: 56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467
+        x-checker-data:
+          type: anitya
+          project-id: 14534
+          url-template: http://www.fftw.org/fftw-$version.tar.gz
+
+  - name: fftw3f
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -Wno-dev # suppress warning for project developers
+      - -DENABLE_THREADS=ON
+      - -DENABLE_FLOAT=ON
+    sources:
+      - type: archive
+        url: http://www.fftw.org/fftw-3.3.10.tar.gz
+        sha256: 56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467
+        x-checker-data:
+          type: anitya
+          project-id: 14534
+          url-template: http://www.fftw.org/fftw-$version.tar.gz
+
+  - name: hdf5
+    buildsystem: cmake-ninja
+    builddir: true
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+    cleanup:
+      - /bin
+    sources:
+      - type: archive
+        url: https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.21/src/hdf5-1.8.21.tar.bz2
+        sha256: e5b1b1dee44a64b795a91c3321ab7196d9e0871fe50d42969761794e3899f40d
+
+  - name: matio
+    buildsystem: cmake-ninja
+    sources:
+      - type: archive
+        url: https://github.com/tbeu/matio/archive/v1.5.21.tar.gz
+        sha256: 2b09738fc765609794cdd4745649dcb2d7a528e9ef427c3b8e2a0d71d37d02f7
+
+  - name: openmpi
+    sources:
+      - type: archive
+        url: https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.1.tar.bz2
+        sha256: 3f11b648dd18a8b878d057e9777f2c43bf78297751ad77ae2cef6db0fe80c77c
+
+  - name: boost
+    buildsystem: simple
+    build-commands:
+      - ./bootstrap.sh --prefix="${FLATPAK_DEST}"
+      - ./b2 -j ${FLATPAK_BUILDER_N_JOBS}
+      - ./b2 -j ${FLATPAK_BUILDER_N_JOBS} headers
+      - ./b2 install
+    sources:
+      - type: archive
+        url: https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.tar.gz
+        sha256: 94ced8b72956591c4775ae2207a9763d3600b30d9d7446562c552f0a14a63be7
+        x-checker-data:
+          type: anitya
+          project-id: 6845
+          url-template: https://boostorg.jfrog.io/artifactory/main/release/$version/source/boost_${version0}_${version1}_$version2.tar.gz
+
+  - name: Eigen3
+    buildsystem: cmake-ninja
+    builddir: true
+    sources:
+      - type: archive
+        url: https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
+        sha256: b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
+        x-checker-data:
+          type: anitya
+          project-id: 13751
+          stable-only: true
+          url-template: https://gitlab.com/libeigen/eigen/-/archive/$version/eigen-$version.tar.bz2
+    cleanup:
+      - '*'
+
+  - name: taglib
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_INSTALL_PREFIX=/app   
+      - -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+      - -DCMAKE_BUILD_TYPE=Release  
+      - -DBUILD_SHARED_LIBS=ON
+    sources:
+      - type: archive
+        url: https://github.com/taglib/taglib/releases/download/v1.12/taglib-1.12.tar.gz
+        sha256: 7fccd07669a523b07a15bd24c8da1bbb92206cb19e9366c3692af3d79253b703
+
+  - name: jack2
+    buildsystem: simple
+    build-commands:
+      - ./waf configure --prefix=/app --htmldir=/app/share/doc/jack/ --classic
+      - ./waf build -j $FLATPAK_BUILDER_N_JOBS
+      - ./waf install
+    cleanup:
+      - '*'
+    sources:
+      - type: archive
+        url: https://github.com/jackaudio/jack2/releases/download/v1.9.14/v1.9.14.tar.gz
+        sha256: a20a32366780c0061fd58fbb5f09e514ea9b7ce6e53b080a44b11a558a83217c
+
+  - name: portaudio
+    buildsystem: cmake-ninja
+    sources:
+      - type: git
+        url: https://github.com/PortAudio/portaudio.git
+        tag: v19.7.0
+
+  - name: libgit2
+    buildsystem: cmake
+    config-opts:
+      - -DCMAKE_INSTALL_PREFIX=/app     
+      - -DCMAKE_BUILD_TYPE=None
+      - -Wno-dev
+      - -DBUILD_SHARED_LIBS:BOOL=ON
+      - -DTHREADSAFE=ON      
+    sources:
+      - type: git
+        url: https://github.com/libgit2/libgit2.git
+        branch: maint/v1.3
+
+  - name: Nelson
+    buildsystem: simple
+    build-commands:
+      - cmake -Wno-dev -DCMAKE_INSTALL_PREFIX=/app  -DCMAKE_BUILD_TYPE=Release -DENABLE_PACKAGING=ON . -DEIGEN3_INCLUDE_DIR=/app/include/eigen3
+      - cmake --build . -- -j $FLATPAK_BUILDER_N_JOBS
+      - cmake --build . -- -j $FLATPAK_BUILDER_N_JOBS buildhelp
+      - cmake --build . -- -j $FLATPAK_BUILDER_N_JOBS get_module_skeleton
+      - cmake --build . -- install
+ 
+    sources:
+      - type: git
+        url: https://github.com/Nelson-numerical-software/nelson.git
+        branch: master
